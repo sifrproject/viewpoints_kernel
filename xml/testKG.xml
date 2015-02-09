@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<KnowledgeGraph>
+    <KnowledgeObjects>
+        <Agent name="a1" />
+        <Agent name="a2" />
+        <Agent name="a3" />
+        <Topic name="t1" />
+        <Topic name="t2" />
+        <Topic name="t3" />
+        <Topic name="t4" />
+        <Document name="d1" />
+    </KnowledgeObjects>
+    
+    <Viewpoints>
+        <Viewpoint emitter="a1" name="v0" o1="a1" o2="t1" type="knows"/>
+        <Viewpoint emitter="a1" name="v1" o1="t1" o2="t2" type="isA"/>
+        <Viewpoint emitter="a1" name="v2" o1="t1" o2="t3" type="isA"/>
+        <Viewpoint emitter="a2" name="v3" o1="a2" o2="t3" type="knows"/>
+        <Viewpoint emitter="a2" name="v4" o1="a2" o2="t2" type="knows"/>
+        <Viewpoint emitter="a1" name="v6" o1="a1" o2="d1" type="isAuthor"/>
+        <Viewpoint emitter="a2" name="v7" o1="a2" o2="d1" type="isAuthor"/>
+        <Viewpoint emitter="a3" name="v8" o1="a3" o2="d1" type="isAuthor"/>
+        <Viewpoint emitter="a3" name="v9" o1="a3" o2="t4" type="knows"/>
+    </Viewpoints>
+</KnowledgeGraph>

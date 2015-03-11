@@ -389,7 +389,7 @@ public class KnowledgeGraph {
      * @param v 
      */
     public void addViewpoint(ConnectedViewpoint v) {
-        if(! (v.getO1() == null || v.getO2() == null || v.getEmitter() == null || containsViewpoint(v, viewpoints))) {
+        if(! (v.getO1() == null || v.getO2() == null || v.getEmitter() == null)) {
             //addVertex(v);
             v.connect();
             viewpoints.add(v);

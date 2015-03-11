@@ -7,8 +7,9 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
-import kernel.knowledgeActivity.viewpointsInterpretation.Perspective;
+import kernel.knowledgeGraph.KnowledgeGraph;
 import kernel.knowledgeGraph.nodes.Node;
+import kernel.knowledgeGraph.nodes.superModel.resources.HumanAgent;
 import kernel.knowledgeGraph.nodes.superModel.resources.Resource;
 import kernel.knowledgeGraph.nodes.superModel.viewpoints.ConnectedViewpoint;
 import kernel.knowledgeGraph.nodes.superModel.viewpoints.ViewpointPolarity;
@@ -31,21 +32,21 @@ public class ShortestPathNeighbourhood2 extends Neighbourhood {
     private LinkedList<ConnectedViewpoint> visitedViewpoints;
     private ArrayList<ConnectedViewpoint> viewpointBuffer;
     private final Comparator knowledgeObjectComparator;
-    private Perspective perspective;
+    private KnowledgeGraph KG;
     
     /**
      * 
-     * @param perspective 
+     * @param KG
      */
-    public ShortestPathNeighbourhood2(Perspective perspective) {
+    public ShortestPathNeighbourhood2(KnowledgeGraph KG) {
         super("Shortest path based semantic neighbourhood");
         tmp = new LinkedHashSet<>();
         visitedObjects = new LinkedList<>();
         viewpointBuffer = new ArrayList<>();
         todo = new LinkedList<>();
         visitedViewpoints = new LinkedList<>();
+        this.KG = KG;
         
-        this.perspective = perspective;
         knowledgeObjectComparator = new Comparator<Resource>() {
 
             @Override
@@ -70,19 +71,22 @@ public class ShortestPathNeighbourhood2 extends Neighbourhood {
             
             for(Node n_i : origin.getNeighbours()) {
                 ConnectedViewpoint v_i = (ConnectedViewpoint) n_i;
-                
-                Resource r_j;
-                
-                if(v_i.getO1() == origin)
-                    r_j = v_i.getO2();
-                else
-                    r_j = v_i.getO1();
-                
-                if(r_j == resource && v_i.getPolarity() == ViewpointPolarity.NEGATIVE)
-                    viewpointBuffer.add(v_i);
+
+                if(v_i.getPolarity() == ViewpointPolarity.NEGATIVE) {
+                    Resource r_j;
+
+                    if(v_i.getO1() == origin)
+                        r_j = v_i.getO2();
+                    else
+                        r_j = v_i.getO1();
+
+                    if(r_j == resource && v_i.getPolarity() == ViewpointPolarity.NEGATIVE)
+                        viewpointBuffer.add(v_i);
+                }
             }
             
-            resource.setWeight(resource.getWeight() + (1.0f / perspective.aggregateVewpoints(viewpointBuffer)));
+            if(! viewpointBuffer.isEmpty())
+                resource.setWeight(resource.getWeight() + (1.0f / observer.getPerspective().aggregateVewpoints(viewpointBuffer)));
         }
         
         return positiveProcessed;
@@ -94,7 +98,7 @@ public class ShortestPathNeighbourhood2 extends Neighbourhood {
      * @param m
      * @return 
      */
-    public HashSet<Resource> processPositive(Resource origin, float m) {
+    private HashSet<Resource> processPositive(Resource origin, float m) {
         float sum, newWeight;
         HashSet<Resource> result = new HashSet<>();
         result.add(origin);
@@ -172,11 +176,16 @@ public class ShortestPathNeighbourhood2 extends Neighbourhood {
      * @param origin 
      */
     private void init(Resource origin) {
-        while(! visitedObjects.isEmpty()) {
+        for(Resource r : KG.getO()) {
+            r.setWeight(-1.0f);
+            r.getReferentViewpoints().clear();
+        }
+        
+        /*while(! visitedObjects.isEmpty()) {
             Resource o_i = visitedObjects.pollFirst();
             o_i.setWeight(-1.0f);
             o_i.getReferentViewpoints().clear();
-        }
+        }*/
 
         while(! visitedViewpoints.isEmpty())
             visitedViewpoints.pollFirst().setPredecessor(null);
@@ -195,6 +204,31 @@ public class ShortestPathNeighbourhood2 extends Neighbourhood {
         neighbourhood.addAll(process(origin, m));
         Collections.sort(neighbourhood, knowledgeObjectComparator);
         return neighbourhood;
+    }
+    
+    public static void main(String[] args) {
+        KnowledgeGraph.USES_NEO4J = false;
+        KnowledgeGraph testKG = new KnowledgeGraph();
+        
+        HumanAgent a = new HumanAgent("a");
+        testKG.addResource(a);
+        Resource r1 = new Resource("r1");
+        testKG.addResource(r1);
+        Resource r2 = new Resource("r2");
+        testKG.addResource(r2);
+        Resource r3 = new Resource("r3");
+        testKG.addResource(r3);
+        testKG.addViewpoint(new ConnectedViewpoint(a, r1, r2, ViewpointPolarity.POSITIVE));
+        testKG.addViewpoint(new ConnectedViewpoint(a, r2, r3, ViewpointPolarity.POSITIVE));
+        testKG.addViewpoint(new ConnectedViewpoint(a, r2, r3, ViewpointPolarity.POSITIVE));
+        testKG.addViewpoint(new ConnectedViewpoint(a, r1, r3, ViewpointPolarity.NEGATIVE));
+        
+        ShortestPathNeighbourhood2 spNeighbourhood = new ShortestPathNeighbourhood2(testKG);
+        spNeighbourhood.setObserver(a);
+        
+        HashSet<Resource> neighbourhood = spNeighbourhood.process(r1, 5.0f);
+        for(Resource r : neighbourhood)
+            System.out.println(r + ", d=" + r.getWeight());
     }
     
 }
